@@ -1,0 +1,6 @@
+1. Auto-update function Write any script but include a function that checks itself for updates.
+
+Example:
+Host the script on github and have it check the md5sum of the current file being run against the md5sum of the script on github.
+If the file is changed, show a prompt asking the user if he wants to update.
+If yes download the latest script and replace the current one.

@@ -1,0 +1,101 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# Written by:	P.Hurley
+#          	Generates a script using a template and gives it "a+x" permissions.
+# -----------------------------------------------------------------------------
+
+VERSION=0.2.0
+USAGE () {
+printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
+Takes a string as the only argument and generates a file with that name.
+Writes a predefined template to the new file and adds\"a+x\" permissions
+automatically.
+
+OPTIONS
+  -R,  --recursive	if fileName contains a directory that does not exist,
+ 			create the directory and any required parent directory.
+  -h,  --help		display this help and exit
+       --version	output version information and exit
+
+ARGUMENTS
+  \$1  fileName		string, used as the name for the file
+
+i.e.
+\$ $(basename $0) wonderScript
+
+Exit status:
+ 0  if OK,
+ 1  if minor issue (e.g. cannot parse input),
+ 2  if serious issue (e.g. cannot access file/resource).\n"
+}
+
+# --- Options processing ------------------------------------------------------
+
+while [[ "$1" =~ ^-.* ]]; do
+	case $1 in
+		-h | --help )		shift
+			USAGE
+			exit 0
+		;;
+		-i | --ignore )		shift
+			ignore=true	# will not compare LOCAL template.txt md5 to REFERENCE md5 for template.txt
+		;;
+		-R | --recursive )	shift
+			recursive=true	# cannot put recursive directory logic here, scriptName is not yet defined
+		;;
+		--version )		shift
+			printf "Script Version:\t$VERSION"
+			exit 0
+		;;
+		*)			shift
+			printf "\n [!] Invalid option $1\n\n"
+			USAGE
+			exit 1
+		;;
+	esac;
+done
+
+# --- Arguments processing ----------------------------------------------------
+
+if [ $1 == "" ]; then
+	printf "ERROR: Not enough arguments, please provide a string for script name.\n\n"
+	USAGE; exit 1
+elif [ $2 ]; then
+	printf "ERROR: Too many arguments, please provide only 1 string for script name.\n\n"
+	USAGE; exit 1
+else
+	scriptName=$1
+fi
+
+# --- Body --------------------------------------------------------------------
+
+templatePath=$(find ~ -name "template.txt")
+reference_md5="ee235890d98700432abb17988ad95720" # reference MD5 hash of template.txt
+
+# template.txt check
+if [ "$ignore" != true ]; then
+	if [ -f $templatePath ]; then
+		local_md5=$(md5sum $templatePath | cut -d " " -f 1)
+	else
+		printf "ERROR: cannot find template.txt file!\n"
+		exit 2
+	fi
+
+	if [ "$reference_md5" != "$local_md5" ]; then
+		printf "WARN: local template.txt does not match reference template.txt continue? [y/n]"; read continue
+		if [[ ! "$continue" =~ ^(y)$ ]]; then
+			exit 0
+		fi
+	fi
+fi
+
+# recursive directory logic
+if [ "$recursive" == true ] && [ ! -d "$(dirname "$scriptName")" ]; then
+	mkdir -p "$(dirname "$scriptName")"
+fi
+
+touch "$scriptName"
+cat "$templatePath" > "$scriptName"
+chmod a+x "$scriptName"
+
+exit 0
