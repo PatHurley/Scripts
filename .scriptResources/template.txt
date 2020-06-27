@@ -29,8 +29,7 @@ Exit status:
 while [[ "$1" =~ ^-.* ]]; do
 	case $1 in
 		-h | --help )	shift
-			USAGE
-			exit 0
+			USAGE; exit 0
 		;;
 		--version )	shift
 			printf "Script Version:\t$VERSION"
@@ -38,10 +37,9 @@ while [[ "$1" =~ ^-.* ]]; do
 		;;
 		*)
 			printf "\n [!] Invalid option $1\n\n"
-			USAGE
-			exit 1
+			USAGE; exit 1
 		;;
-	esac;			shift
+	esac;
 done
 
 # --- Body --------------------------------------------------------------------                                                    #

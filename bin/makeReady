@@ -32,8 +32,9 @@ Exit status:
  1  if minor issue (e.g. cannot parse input),
  2  if serious issue (e.g. cannot access file/resource).\n"
 }
-ref_md5="dd20c54cc447b4cba7d3c26da260d61e" # reference MD5 hash of template.txt
-permissions="a+x"
+
+ref_md5="e5dfb969314d83a4fae829cb4c0f1e5c"	# reference MD5 hash of template.txt
+permissions="a+x"				# default permissions
 
 # --- Options processing ------------------------------------------------------
 
