@@ -4,7 +4,7 @@
 #          	Generates a script using a template and gives it "a+x" permissions.
 # -----------------------------------------------------------------------------
 
-VERSION=0.2.0
+VERSION=0.3.0
 USAGE () {
 printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
 Takes a string as the only argument and generates a file with that name.
@@ -12,8 +12,12 @@ Writes a predefined template to the new file and adds\"a+x\" permissions
 automatically.
 
 OPTIONS
+  -p,  --permissions	string, provide permissions for the script other than
+  			a+x. (applied using chmod command)
   -R,  --recursive	if fileName contains a directory that does not exist,
  			create the directory and any required parent directory.
+  -t,  --template	path of a file as a string, to substitute the predefined
+  			template.
   -h,  --help		display this help and exit
        --version	output version information and exit
 
@@ -28,65 +32,73 @@ Exit status:
  1  if minor issue (e.g. cannot parse input),
  2  if serious issue (e.g. cannot access file/resource).\n"
 }
+ref_md5="dd20c54cc447b4cba7d3c26da260d61e" # reference MD5 hash of template.txt
+permissions="a+x"
 
 # --- Options processing ------------------------------------------------------
 
 while [[ "$1" =~ ^-.* ]]; do
 	case $1 in
 		-h | --help )		shift
-			USAGE
-			exit 0
+			USAGE; exit 0
 		;;
-		-i | --ignore )		shift
-			ignore=true	# will not compare LOCAL template.txt md5 to REFERENCE md5 for template.txt
+		-p | --permissions )	shift
+			permissions="$1"
+			# permissions test
+			touch .m4k3r34dyf1l3.tmp
+			chmod -f $permissions .m4k3r34dyf1l3.tmp 2> /dev/null
+			case $? in
+				0)
+					rm -f .m4k3r34dyf1l3.tmp
+				;;
+				*)
+					rm -f .m4k3r34dyf1l3.tmp
+					printf "ERROR: Provided arguments do not work.\n"
+					exit 1
+				;;
+			esac
+			shift
 		;;
 		-R | --recursive )	shift
 			recursive=true	# cannot put recursive directory logic here, scriptName is not yet defined
+		;;
+		-t | --template )	shift
+			templatePath="$1"
+			shift
 		;;
 		--version )		shift
 			printf "Script Version:\t$VERSION"
 			exit 0
 		;;
-		*)			shift
-			printf "\n [!] Invalid option $1\n\n"
-			USAGE
-			exit 1
+		*)
+			printf "\n [!] Invalid option: $1\n\n"
+			USAGE; exit 1
 		;;
 	esac;
 done
 
 # --- Arguments processing ----------------------------------------------------
 
-if [ $1 == "" ]; then
+if [ -z $1 ]; then
 	printf "ERROR: Not enough arguments, please provide a string for script name.\n\n"
 	USAGE; exit 1
 elif [ $2 ]; then
 	printf "ERROR: Too many arguments, please provide only 1 string for script name.\n\n"
 	USAGE; exit 1
 else
-	scriptName=$1
+	scriptName="$1"
 fi
 
-# --- Body --------------------------------------------------------------------
+# --- Body --------------------------------------------------------------------                                                    #
 
-templatePath=$(find ~ -name "template.txt")
-reference_md5="ee235890d98700432abb17988ad95720" # reference MD5 hash of template.txt
+# template check
+if [ -z "$templatePath" ]; then
+        templatePath="$(find ~ -type f -name template.txt -exec md5sum '{}' ';' | grep "$ref_md5" | cut -d " " -f 3)"
+fi
 
-# template.txt check
-if [ "$ignore" != true ]; then
-	if [ -f $templatePath ]; then
-		local_md5=$(md5sum $templatePath | cut -d " " -f 1)
-	else
-		printf "ERROR: cannot find template.txt file!\n"
-		exit 2
-	fi
-
-	if [ "$reference_md5" != "$local_md5" ]; then
-		printf "WARN: local template.txt does not match reference template.txt continue? [y/n]"; read continue
-		if [[ ! "$continue" =~ ^(y)$ ]]; then
-			exit 0
-		fi
-	fi
+if [ ! -f $templatePath ]; then
+	printf "ERROR: Cannot find template file, or it's contents have been changed!"
+	exit 2
 fi
 
 # recursive directory logic
@@ -96,6 +108,6 @@ fi
 
 touch "$scriptName"
 cat "$templatePath" > "$scriptName"
-chmod a+x "$scriptName"
+chmod $permissions "$scriptName"
 
 exit 0

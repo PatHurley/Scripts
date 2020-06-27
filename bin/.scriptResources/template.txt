@@ -36,7 +36,7 @@ while [[ "$1" =~ ^-.* ]]; do
 			printf "Script Version:\t$VERSION"
 			exit 0
 		;;
-		*)		shift
+		*)
 			printf "\n [!] Invalid option $1\n\n"
 			USAGE
 			exit 1
@@ -44,7 +44,7 @@ while [[ "$1" =~ ^-.* ]]; do
 	esac;			shift
 done
 
-# --- Body --------------------------------------------------------------------
+# --- Body --------------------------------------------------------------------                                                    #
 
 #  SCRIPT LOGIC GOES HERE
 
