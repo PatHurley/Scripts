@@ -4,7 +4,7 @@
 #          	A multiplayer game of tic-tac-toe
 #
 # TODOs:
-#	-user multiplayer (same system)
+#	-user multiplayer (same system, different proccess or user)
 #	-network multiplayer (LAN/WAN)
 #	-AI opponent (Easy/Medium/Hard)
 # -----------------------------------------------------------------------------
