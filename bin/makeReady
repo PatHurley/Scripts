@@ -33,7 +33,7 @@ Exit status:
  2  if serious issue (e.g. cannot access file/resource).\n"
 }
 
-ref_md5="e5dfb969314d83a4fae829cb4c0f1e5c"	# reference MD5 hash of template.txt
+ref_md5="a65e12e5b70cebcc079877e133abd051"	# reference MD5 hash of template.txt
 permissions="a+x"				# default permissions
 
 # --- Options processing ------------------------------------------------------
@@ -68,7 +68,7 @@ while [[ "$1" =~ ^-.* ]]; do
 			shift
 		;;
 		--version )		shift
-			printf "Script Version:\t$VERSION"
+			printf "Script Version:\t$VERSION\n"
 			exit 0
 		;;
 		*)

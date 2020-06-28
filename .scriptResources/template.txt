@@ -32,7 +32,7 @@ while [[ "$1" =~ ^-.* ]]; do
 			USAGE; exit 0
 		;;
 		--version )	shift
-			printf "Script Version:\t$VERSION"
+			printf "Script Version:\t$VERSION\n"
 			exit 0
 		;;
 		*)
