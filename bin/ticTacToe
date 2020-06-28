@@ -4,7 +4,7 @@
 #          	A multiplayer game of tic-tac-toe
 #
 # TODOs:
-#	-user multiplayer (same system, different proccess or user)
+#	-user multiplayer (same system, different instance or user)
 #	-network multiplayer (LAN/WAN)
 #	-AI opponent (Easy/Medium/Hard)
 # -----------------------------------------------------------------------------
@@ -59,12 +59,12 @@ done
 
 # --- Variable Initialization -------------------------------------------------
 
-# Each space initialized as a space char to fill blank on the board.
+# Each [board]space initialized as a single [character]space to fill empty [board]spaces.
 a1=' ';a2=' ';a3=' '
 b1=' ';b2=' ';b3=' '
 c1=' ';c2=' ';c3=' '
 
-# horizontal win patterns
+# horizontal win patterns (refer to $spaces variable)
 xh1="XXX......";xh2="...XXX...";xh3="......XXX"
 oh1="OOO......";oh2="...OOO...";oh3="......OOO"
 
@@ -77,8 +77,8 @@ xd1="X...X...X";xd2="..X.X.X.."
 od1="O...O...O";od2="..O.O.O.."
 
 winner=''	# Explicitly defined as empty.
-turn='X'	# Player who goes first.
-i=1		# Used to count turns.
+turn='X'	# Player who goes first, used to track who's turn it is.
+i=1		# Used to count the turn. (only 9 turns in a game of TTT)
 
 # --- Functions ---------------------------------------------------------------
 
@@ -114,7 +114,7 @@ winCheck() {
 	fi
 }
 
-checkSpace() {
+checkSpace() {		# Checks that space is empty, and move is valid.
         case "$1" in
                 a1 | A1 )
 			case $a1 in
@@ -194,18 +194,18 @@ setMove() {
 until [ $winner ]; do
 	clear
 
-	# Check for a draw
+	# Check for a draw.
 	if [ $i -gt 9 ]; then
 		break
 	fi
 
-	# Print the board
+	# Print the board.
 	printBoard $i;
 	
-	# Process the move
+	# Process the move.
 	read -p "Player \"$turn\" move: " move
 	
-	# Validate the move
+	# Validate the move.
 	checkSpace "$move"
 	if [ $? -eq 0 ]; then
 		setMove $move $turn
@@ -215,7 +215,7 @@ until [ $winner ]; do
 		sleep 1; continue
 	fi
 
-        # Check for a win
+        # Check for a win.
         spaces="$a1$a2$a3$b1$b2$b3$c1$c2$c3"; winCheck "$spaces"
 	case $turn in
 		X) turn='O'; ((i+=1)) ;;
@@ -223,7 +223,7 @@ until [ $winner ]; do
 	esac
 done
 
-# Display end results
+# Display game result.
 clear; printBoard (($i-1))
 
 if [ ! -z $winner ]; then
