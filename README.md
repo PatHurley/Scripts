@@ -1,4 +1,4 @@
-# BashScripts
+# Scripts
 Scripts I have written and deemed worth publishing.
 
 20200626
