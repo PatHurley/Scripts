@@ -207,7 +207,7 @@ textTea() {
       fi
     ;;
 
-    text )
+    txt )
       local bytes=""
       for (( i=0; i<${#value}; i++ )); do
         # Get the UTF-8 byte representation of the character
@@ -281,7 +281,7 @@ while [[ "$1" =~ ^-.* ]]; do
       if [[ $1 =~ ^[01\ ]+$ ]]; then
         decoded=$(textTea "$1" "bin")
       else
-        decoded=$(textTea "$1" "text")
+        decoded=$(textTea "$1" "txt")
       fi
 
       printf "encoded: ${encoded}\ndecoded: ${decoded}\n\n"
