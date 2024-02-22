@@ -4,7 +4,7 @@ VERSION=02.21.24
 
 # --- Functions ---------------------------------------------------------------
 
-USAGE(){
+USAGE() {
 printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
 Takes a binary, decimal, or hexadecimal value and translates it to
 the other 2 numbering systems.
