@@ -1,18 +1,21 @@
 #!/bin/bash
 
-VERSION=02.21.24
+# Number Translator
+VERSION=02.21.25
 
 # --- Functions ---------------------------------------------------------------
 
 USAGE() {
 printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
 Takes a binary, decimal, or hexadecimal value and translates it to
-the other 2 numbering systems.
+the other 2 numbering systems. Can also translate between binary
+and text.
 
 OPTIONS
   -b,  --bin     translate input string from binary
   -d,  --dec     translate input string from decimal
   -h,  --hex     translate input string from hexadecimal
+  -t,  --text    translate binary to text, or text to binary
 
        --help    display this help and exit
        --version output version information and exit
@@ -34,17 +37,27 @@ hex 141
 
 dec 4095
 bin 111111111111
-hex FFF\n\n"
+hex FFF
+
+\$ ./$(basename $0) -t \"hello there\"
+encoded: hello there
+decoded: 01101000 01100101 01101100 01101100 01101111 00100000 01110100 01101000 01100101 01110010 01100101
+
+\$ ./$(basename $0) --text 0110100001100101011011000110110001101111001000000111010001101000011001010111001001100101
+encoded: 0110100001100101011011000110110001101111001000000111010001101000011001010111001001100101
+decoded: hello there
+\n\n"
 }
 
 toBin() {
-  local value=$1
+  local value=$(echo "${1^^}")
   local type="$2"
 
   case "$type" in
     bin )
       echo $value
     ;;
+
     dec )
       while [ $value -gt 0 ]; do
         local remainder=$(( $value % 2 ))
@@ -54,6 +67,7 @@ toBin() {
 
       echo $binary
     ;;
+
     hex )
       local -A hex_to_bin=(
         [0]=0000 [1]=0001 [2]=0010 [3]=0011 [4]=0100 [5]=0101 [6]=0110 [7]=0111
@@ -72,7 +86,7 @@ toBin() {
 }
 
 toDec() {
-  local value=$1
+  local value=$(echo "${1^^}")
   local type="$2"
 
   case "$type" in
@@ -88,9 +102,11 @@ toDec() {
 
       echo $decimal
     ;;
+
     dec )
       echo $value
     ;;
+
     hex )
       #local decimal=$(toDec $(toBin $value "hex") "bin")
       local decimal=0
@@ -111,7 +127,7 @@ toDec() {
 }
 
 toHex() {
-  local value=$1
+  local value=$(echo "${1^^}")
   local type="$2"
 
   case "$type" in
@@ -138,6 +154,7 @@ toHex() {
 
       echo $hexadecimal
     ;;
+
     dec )
       #local hexadecimal=$(toHex $(toBin $value "dec") "bin")
       while [[ $value -gt 0 ]]; do
@@ -159,8 +176,62 @@ toHex() {
 
       echo $hexadecimal
     ;;
+
     hex )
       echo $value
+    ;;
+  esac
+}
+
+textTea() {
+  local value="$1"
+  local type="$2"
+
+  case "$type" in
+    bin )
+      local binary="${value// /}"
+      if [[ ! $((${#binary} % 8)) -eq 0 ]]; then
+        echo "Binary not UTF-8... cannot translate."
+      else
+        local text=""
+        while [[ -n $binary ]]; do
+          local byte="${binary:0:8}"
+        
+          # Convert the binary byte to decimal and then to ASCII character
+          local decimal=$(toDec $byte "bin")
+          local char=$(printf "\\$(printf '%03o' "$decimal")")
+        
+          local text="${text}${char}"
+          local binary="${binary:8}"
+        done
+        echo "$text"
+      fi
+    ;;
+
+    text )
+      local bytes=""
+      for (( i=0; i<${#value}; i++ )); do
+        # Get the UTF-8 byte representation of the character
+        local ascii_dec=$(printf "%d" "'${value:$i:1}")
+        local ascii_bin=$(toBin $ascii_dec "dec")
+
+        # Pad the ascii binary w/ leading 0's to ensure it is a complete byte
+        local remainder=$((${#ascii_bin} % 8))
+        if [[ $remainder -ne 0 ]]; then
+          local padding=$((8 - $remainder))
+          local zeros=$(printf "%0.s0" $(seq 1 $padding))
+          local ascii_byte=$(printf "${zeros}${ascii_bin}")
+        else
+          local ascii_byte=$ascii_bin
+        fi
+
+        local bytes="$bytes $ascii_byte"
+      done
+    
+      # Remove leading whitespace
+      local bytes="${bytes# }"
+    
+      echo "$bytes"
     ;;
   esac
 }
@@ -178,26 +249,45 @@ while [[ "$1" =~ ^-.* ]]; do
   case $1 in
     -b | --bin) shift
       [[ ! $1 =~ ^[01]+$ ]] && printf "$1 is not binary.\n\n" && shift && continue
+
       bin=$1
       dec=$(toDec $1 "bin")
       hex=$(toHex $1 "bin")
+
       printf "dec ${dec}\nbin ${bin}\nhex ${hex}\n\n"
     ;;
+
     -d | --dec) shift
       [[ ! $1 =~ ^[0-9]+$ ]] && printf "$1 is not decimal.\n\n" && shift && continue
+
       bin=$(toBin $1 "dec")
       dec=$1
       hex=$(toHex $1 "dec")
+
       printf "dec ${dec}\nbin ${bin}\nhex ${hex}\n\n"
     ;;
+
     -h | --hex) shift
       [[ ! $1 =~ ^[0-9a-fA-F]+$ ]] && printf "$1 is not hexadecimal.\n\n" && shift && continue
-      hex_cap=$(echo "${1^^}")
-      bin=$(toBin $hex_cap "hex")
-      dec=$(toDec $hex_cap "hex")
-      hex=$hex_cap
+
+      bin=$(toBin $1 "hex")
+      dec=$(toDec $1 "hex")
+      hex=$(toHex $1 "hex")
+
       printf "dec ${dec}\nbin ${bin}\nhex ${hex}\n\n"
     ;;
+
+    -t | --text) shift
+      encoded="$1"
+      if [[ $1 =~ ^[01\ ]+$ ]]; then
+        decoded=$(textTea "$1" "bin")
+      else
+        decoded=$(textTea "$1" "text")
+      fi
+
+      printf "encoded: ${encoded}\ndecoded: ${decoded}\n\n"
+    ;;
+
 
     --help ) shift
       USAGE
