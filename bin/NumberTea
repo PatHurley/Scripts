@@ -1,27 +1,27 @@
 #!/bin/bash
 
 # Number Translator
-VERSION=02.22.24
+VERSION=02.23.24
 
 # --- Functions ---------------------------------------------------------------
 
 USAGE() {
 printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
 Takes a binary, decimal, or hexadecimal value and translates it to
-the other 2 numbering systems. 
-
-Also translate between binary and text, see options section for details.
+the other 2 numbering systems.
+Can translate a UTF-8 binary string to text and vice versa.
 
 OPTIONS
   -b,  --bin     translate input string from binary
   -d,  --dec     translate input string from decimal
   -h,  --hex     translate input string from hexadecimal
-  -t,  --text    translate binary to text, or text to binary
-  -f,  --file    translates files of binary to text, and vice versa
+  -t,  --text    translate binary to text, or text to binary;
+                 takes a string of text or binary as an argument
+  -f,  --file    translates files of binary to text, and vice versa;
+                 takes a path to a file as an argument
 
        --help    display this help and exit
        --version output version information and exit
-
 i.e.
 \$ ./$(basename $0) --dec 123
 dec 123
@@ -47,7 +47,12 @@ decoded: 01101000 01100101 01101100 01101100 01101111 00100000 01110100 01101000
 
 \$ ./$(basename $0) --text 0110100001100101011011000110110001101111001000000111010001101000011001010111001001100101
 encoded: 0110100001100101011011000110110001101111001000000111010001101000011001010111001001100101
-decoded: hello there\n"
+decoded: hello there
+
+\$ ./$(basename $0) -f textFile
+Encoded file: encoded_textFile
+\$ ./$(basename $0) --file binFile
+Decoded file: decoded_binFile\n"
 }
 
 toBin() {
@@ -197,15 +202,21 @@ textTea() {
         local text=""
         while [[ -n $binary ]]; do
           local byte="${binary:0:8}"
-        
-          # Convert the binary byte to decimal and then to ASCII character
-          local decimal=$(toDec $byte "bin")
-          local char=$(printf "\\$(printf '%03o' "$decimal")")
-        
-          local text="${text}${char}"
+          case $byte in
+            "00001010") #newline
+              local text="${text}\n"
+            ;;
+            "01011100") #\
+              local text="${text}\\"
+            ;;
+            *) # Convert the byte to decimal and then to ASCII character
+              local decimal=$(toDec $byte "bin"); local char=$(printf "\\$(printf '%03o' "$decimal")")
+              local text="${text}${char}"
+            ;;
+          esac
           local binary="${binary:8}"
         done
-        echo "$text"
+        printf "%b\n" "$text"
       fi
     ;;
 
@@ -226,7 +237,7 @@ textTea() {
           local ascii_byte=$ascii_bin
         fi
 
-        local bytes="$bytes $ascii_byte"
+        local bytes="$bytes$ascii_byte"
       done
     
       # Remove leading whitespace
@@ -240,21 +251,25 @@ textTea() {
 runFile() {
   local filePath="$1"
   local fileName=$(basename "$filePath")
+  local nonBin=0
 
-  grep -q -v '[^10 \n]' "$filePath"; case "$?" in
-    "1")
-      local fileType="txt"
-	  local encodedFileName=$(printf "encoded_${fileName}")
+  while IFS= read -r -n1 char; do
+    [[ ! $char =~ ^[01\ \\n]+$ && ! -z $char ]] && nonBin=$(($nonBin + 1))
+  done < $filePath
 
-	  textTea "$(cat ${filePath})" $fileType > $encodedFileName && printf "Encoded file: ${encodedFileName}\n"
-    ;;
+  case "$nonBin" in
     "0")
       local fileType="bin"
-	  local decodedFileName=$(printf "decoded_${fileName}")
-
-	  textTea "$(cat ${filePath})" $fileType > $decodedFileName && printf "Decoded file: ${decodedFileName}\n"
+	    local decodedFileName=$(printf "decoded_${fileName}")
+	    textTea "$(cat ${filePath})" $fileType > $decodedFileName && printf "Decoded file: ${decodedFileName}\n"
+    ;;
+    *)
+      local fileType="txt"
+	    local encodedFileName=$(printf "encoded_${fileName}")
+	    textTea "$(cat ${filePath})" $fileType > $encodedFileName && printf "Encoded file: ${encodedFileName}\n"
     ;;
   esac
+  local nonBin=
 }
 
 # --- Arguments processing ----------------------------------------------------
@@ -309,8 +324,9 @@ while [[ "$1" =~ ^-.* ]]; do
       printf "encoded: ${encoded}\ndecoded: ${decoded}\n\n"
     ;;
 	
-	-f | --file) shift
-	  runFile "$1"
+	  -f | --file) shift
+      [[ ! -f $1 ]] && printf "Cannot read file $1.\n\n" && shift && continue
+	    runFile "$1"
     ;;
 
     --help ) shift
