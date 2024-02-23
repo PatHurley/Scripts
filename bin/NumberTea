@@ -1,21 +1,23 @@
 #!/bin/bash
 
 # Number Translator
-VERSION=02.21.25
+VERSION=02.22.24
 
 # --- Functions ---------------------------------------------------------------
 
 USAGE() {
 printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
 Takes a binary, decimal, or hexadecimal value and translates it to
-the other 2 numbering systems. Can also translate between binary
-and text.
+the other 2 numbering systems. 
+
+Also translate between binary and text, see options section for details.
 
 OPTIONS
   -b,  --bin     translate input string from binary
   -d,  --dec     translate input string from decimal
   -h,  --hex     translate input string from hexadecimal
   -t,  --text    translate binary to text, or text to binary
+  -f,  --file    translates files of binary to text, and vice versa
 
        --help    display this help and exit
        --version output version information and exit
@@ -235,6 +237,26 @@ textTea() {
   esac
 }
 
+runFile() {
+  local filePath="$1"
+  local fileName=$(basename "$filePath")
+
+  grep -q -v '[^10 \n]' "$filePath"; case "$?" in
+    "1")
+      local fileType="txt"
+	  local encodedFileName=$(printf "encoded_${fileName}")
+
+	  textTea "$(cat ${filePath})" $fileType > $encodedFileName && printf "Encoded file: ${encodedFileName}\n"
+    ;;
+    "0")
+      local fileType="bin"
+	  local decodedFileName=$(printf "decoded_${fileName}")
+
+	  textTea "$(cat ${filePath})" $fileType > $decodedFileName && printf "Decoded file: ${decodedFileName}\n"
+    ;;
+  esac
+}
+
 # --- Arguments processing ----------------------------------------------------
 
 if [ -z $1 ]; then
@@ -286,7 +308,10 @@ while [[ "$1" =~ ^-.* ]]; do
 
       printf "encoded: ${encoded}\ndecoded: ${decoded}\n\n"
     ;;
-
+	
+	-f | --file) shift
+	  runFile "$1"
+    ;;
 
     --help ) shift
       USAGE
