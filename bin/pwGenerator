@@ -1,11 +1,39 @@
 #!/bin/bash
-specials='!@#$%^&*()_+-={}[]|:;<>,.?'
 
-#---Parameters---#
+# Password Generator
+VERSION=06.17.24
+
+# --- Parameters --------------------------------------------------------------
+specials='!@#$%^&*()_+-={}[]|:;<>,.?' #Special Characters
 l=8  #Total length of the password
 sc=2 #Number of special characters
 
-#---Arguments---#
+# --- Functions ---------------------------------------------------------------
+USAGE() {
+printf "Usage: $(basename $0) [OPTIONS]... [ARGUMENTS]...
+Creates a random password based on requirements.
+Will generate a 8 character password with 2 special characters by default.
+
+OPTIONS
+  -l,  --length        how many characters in total the password should be
+  -s,  --special_chars how many special characters should be in the generated password
+
+       --help          disaply this help and exit
+       --version       output version information and exit
+i.e.
+$ ./$(basename $0)
+Password: >wGv[4UR
+
+$ ./$(basename $0) -l 16
+Password: vym[:hDnQT7JoloW
+
+$ ./$(basename $0) -l 10 -s 5
+Password: t&-Y*;uCx@
+"
+}
+
+
+# --- Arguments ---------------------------------------------------------------
 while [[ "$1" =~ ^-.* ]]; do
   case $1 in
     -l | --length)
@@ -14,10 +42,14 @@ while [[ "$1" =~ ^-.* ]]; do
     -s | --special_chars)
       sc=$2; shift 2
     ;;
+
+    --help)    USAGE; exit 0 ;;
+    --version) printf "Script Version:\t$VERSION\n"; exit 0 ;;
+    *)         printf "\n [!] Invalid option: $1\n\n"; exit 1 ;;
   esac;
 done
 
-#---Main---#
+# --- Main --------------------------------------------------------------------
 nc=$(($l - $sc))
 [ $nc -lt 0  ] && echo "[!] Number of special characters is greater then password length." && exit 1
 [ $nc -gt $l ] && echo "[!] Number of normal characters is greater then password length."  && exit 1
